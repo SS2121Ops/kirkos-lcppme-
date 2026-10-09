@@ -1,2 +1,7 @@
 Flask
 gunicorn
+Flask-SQLAlchemy
+Flask-Login
+Flask-Migrate
+openpyxl
+reportlab
