@@ -2,10 +2,15 @@ from datetime import datetime
 from models import db
 
 
-class KPI(db.Model):
-    __tablename__ = "kpi"
+class Plan(db.Model):
+    __tablename__ = "plan"
 
     id = db.Column(db.Integer, primary_key=True)
+
+    fiscal_year = db.Column(
+        db.String(20),
+        nullable=False
+    )
 
     process_id = db.Column(
         db.Integer,
@@ -19,25 +24,21 @@ class KPI(db.Model):
         nullable=True
     )
 
-    code = db.Column(db.String(50), unique=True, nullable=False)
-    name = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text)
-
-    measurement_unit = db.Column(db.String(50), nullable=False)
-    measurement_type = db.Column(
-        db.String(50),
-        nullable=False,
-        default="Count"
+    title = db.Column(
+        db.String(255),
+        nullable=False
     )
 
-    calculation_method = db.Column(db.String(100))
+    objective = db.Column(db.Text)
 
-    tracks_monthly = db.Column(db.Boolean, default=True)
-    tracks_cumulative = db.Column(db.Boolean, default=True)
-    evidence_required = db.Column(db.Boolean, default=True)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
 
-    source_sheet = db.Column(db.String(150))
-    status = db.Column(db.String(30), default="Active")
+    status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Draft"
+    )
 
     created_at = db.Column(
         db.DateTime,
@@ -46,6 +47,51 @@ class KPI(db.Model):
 
     targets = db.relationship(
         "PlanTarget",
-        backref="kpi",
+        backref="plan",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
+
+
+class PlanTarget(db.Model):
+    __tablename__ = "plan_target"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    plan_id = db.Column(
+        db.Integer,
+        db.ForeignKey("plan.id"),
+        nullable=False
+    )
+
+    kpi_id = db.Column(
+        db.Integer,
+        db.ForeignKey("kpi.id"),
+        nullable=False
+    )
+
+    period = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    month = db.Column(db.Integer)
+
+    quarter = db.Column(db.String(10))
+
+    target_value = db.Column(
+        db.Float,
+        nullable=False,
+        default=0
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    performances = db.relationship(
+        "Performance",
+        backref="target",
         lazy=True
     )
