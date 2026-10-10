@@ -15,3 +15,9 @@ def init_extensions(app):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+from models.user import User
+from models.process import WorkProcess
+from models.team import Team
+from models.kpi import KPI
+from models.plan import Plan, PlanTarget
+from models.performance import Performance
