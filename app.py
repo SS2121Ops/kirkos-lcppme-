@@ -7,7 +7,7 @@ from models import Plan, PlanTarget, KPI, Performance
 
 def create_app():
     app = Flask(__name__)
-
+app.config.from_object("config.Config")
     # Application configuration
     app.config["SECRET_KEY"] = os.environ.get(
         "SECRET_KEY",
