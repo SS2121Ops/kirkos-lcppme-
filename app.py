@@ -172,33 +172,294 @@ def create_app():
             total_performances=total_performances,
             performance_percent=performance_percent
         )
-
-    @app.route("/plans")
+    @app.route("/plans", methods=["GET", "POST"])
     def plans():
+        if request.method == "POST":
+            fiscal_year = request.form.get(
+                "fiscal_year", ""
+            ).strip()
+
+            title = request.form.get(
+                "title", ""
+            ).strip()
+
+            objective = request.form.get(
+                "objective", ""
+            ).strip()
+
+            process_id = request.form.get(
+                "process_id", type=int
+            )
+
+            team_id = request.form.get(
+                "team_id", type=int
+            )
+
+            start_date_text = request.form.get(
+                "start_date", ""
+            ).strip()
+
+            end_date_text = request.form.get(
+                "end_date", ""
+            ).strip()
+
+            if not fiscal_year or not title or not process_id:
+                flash(
+                    "የበጀት ዓመት፣ የዕቅድ ርዕስና የሥራ ሂደት ያስፈልጋሉ።",
+                    "error"
+                )
+                return redirect(url_for("plans"))
+
+            process = db.session.get(
+                WorkProcess, process_id
+            )
+
+            if not process or process.status != "Active":
+                flash(
+                    "ትክክለኛ ንቁ የሥራ ሂደት ይምረጡ።",
+                    "error"
+                )
+                return redirect(url_for("plans"))
+
+            team = None
+
+            if team_id:
+                team = db.session.get(Team, team_id)
+
+                if (
+                    not team
+                    or team.status != "Active"
+                    or team.process_id != process.id
+                ):
+                    flash(
+                        "ከተመረጠው የሥራ ሂደት ጋር የሚዛመድ ንቁ ቡድን ይምረጡ።",
+                        "error"
+                    )
+                    return redirect(url_for("plans"))
+
+            try:
+                start_date = (
+                    datetime.strptime(
+                        start_date_text, "%Y-%m-%d"
+                    ).date()
+                    if start_date_text else None
+                )
+
+                end_date = (
+                    datetime.strptime(
+                        end_date_text, "%Y-%m-%d"
+                    ).date()
+                    if end_date_text else None
+                )
+
+                if (
+                    start_date and end_date
+                    and end_date < start_date
+                ):
+                    raise ValueError(
+                        "የመጨረሻ ቀን ከመጀመሪያ ቀን በፊት መሆን የለበትም።"
+                    )
+
+                new_plan = Plan(
+                    fiscal_year=fiscal_year,
+                    title=title,
+                    objective=objective or None,
+                    process_id=process.id,
+                    team_id=team.id if team else None,
+                    start_date=start_date,
+                    end_date=end_date,
+                    status="Draft"
+                )
+
+                db.session.add(new_plan)
+                db.session.commit()
+
+                flash(
+                    "ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል።",
+                    "success"
+                )
+
+            except ValueError as error:
+                db.session.rollback()
+                flash(str(error), "error")
+
+            except Exception:
+                db.session.rollback()
+                app.logger.exception(
+                    "Failed to save annual plan"
+                )
+                flash(
+                    "ዕቅዱን ማስቀመጥ አልተቻለም። እባክዎ የሥርዓቱን ሎግ ያረጋግጡ።",
+                    "error"
+                )
+
+            return redirect(url_for("plans"))
+
         plans_list = Plan.query.order_by(
             Plan.id.desc()
         ).all()
 
+        processes = WorkProcess.query.filter_by(
+            status="Active"
+        ).order_by(WorkProcess.name).all()
+
+        teams = Team.query.filter_by(
+            status="Active"
+        ).order_by(Team.name).all()
+
         return render_template_string(
             """
-            <h2>Annual Plans | ዓመታዊ ዕቅዶች</h2>
-            <table border="1" cellpadding="8" cellspacing="0">
-                <tr>
-                    <th>Fiscal Year</th>
-                    <th>Plan Title</th>
-                    <th>Status</th>
-                </tr>
-                {% for plan in plans_list %}
-                <tr>
-                    <td>{{ plan.fiscal_year }}</td>
-                    <td>{{ plan.title }}</td>
-                    <td>{{ plan.status }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-            <p><a href="/">Back to Dashboard</a></p>
+            <!doctype html>
+            <html lang="am">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1">
+                <title>ዓመታዊ ዕቅዶች</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                        background: #f4f7fb;
+                        color: #243247;
+                    }
+                    .card {
+                        background: white;
+                        padding: 18px;
+                        margin-bottom: 20px;
+                        border-radius: 10px;
+                        box-shadow: 0 2px 8px #0001;
+                    }
+                    label {
+                        display: block;
+                        margin-top: 12px;
+                        font-weight: bold;
+                    }
+                    input, select, textarea, button {
+                        box-sizing: border-box;
+                        width: 100%;
+                        padding: 10px;
+                        margin-top: 5px;
+                        border: 1px solid #ccd4df;
+                        border-radius: 5px;
+                        font-size: 15px;
+                    }
+                    button {
+                        margin-top: 18px;
+                        background: #1457a6;
+                        color: white;
+                        border: 0;
+                        font-weight: bold;
+                    }
+                    .table-wrap { overflow-x: auto; }
+                    table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        background: white;
+                    }
+                    th, td {
+                        border: 1px solid #d9e0e8;
+                        padding: 10px;
+                        text-align: left;
+                    }
+                    th { background: #eaf0f8; }
+                    .success { color: #137333; }
+                    .error { color: #b3261e; }
+                </style>
+            </head>
+            <body>
+                <h2>ዓመታዊ ዕቅዶች | Annual Plans</h2>
+
+                {% with messages = get_flashed_messages(
+                    with_categories=true
+                ) %}
+                  {% for category, message in messages %}
+                    <p class="{{ category }}">{{ message }}</p>
+                  {% endfor %}
+                {% endwith %}
+
+                <div class="card">
+                    <h3>አዲስ ዕቅድ መመዝገቢያ</h3>
+
+                    <form method="post">
+                        <label>የበጀት ዓመት</label>
+                        <input name="fiscal_year"
+                               placeholder="ለምሳሌ 2019 ዓ.ም."
+                               required>
+
+                        <label>የዕቅድ ርዕስ</label>
+                        <input name="title" maxlength="255"
+                               required>
+
+                        <label>የሥራ ሂደት</label>
+                        <select name="process_id" required>
+                            <option value="">-- ይምረጡ --</option>
+                            {% for process in processes %}
+                            <option value="{{ process.id }}">
+                                {{ process.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <label>የቡድን ስም (አማራጭ)</label>
+                        <select name="team_id">
+                            <option value="">-- ያለ ቡድን --</option>
+                            {% for team in teams %}
+                            <option value="{{ team.id }}">
+                                {{ team.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <label>ዓላማ</label>
+                        <textarea name="objective" rows="3"></textarea>
+
+                        <label>የመጀመሪያ ቀን</label>
+                        <input type="date" name="start_date">
+
+                        <label>የመጨረሻ ቀን</label>
+                        <input type="date" name="end_date">
+
+                        <button type="submit">
+                            ዕቅዱን አስቀምጥ | Save Plan
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>የተመዘገቡ ዕቅዶች</h3>
+                    <div class="table-wrap">
+                    <table>
+                        <tr>
+                            <th>የበጀት ዓመት</th>
+                            <th>የዕቅድ ርዕስ</th>
+                            <th>ሁኔታ</th>
+                        </tr>
+                        {% for plan in plans_list %}
+                        <tr>
+                            <td>{{ plan.fiscal_year }}</td>
+                            <td>{{ plan.title }}</td>
+                            <td>{{ plan.status }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                እስካሁን የተመዘገበ ዕቅድ የለም።
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    </div>
+                </div>
+
+                <p><a href="/">ወደ Dashboard ተመለስ</a></p>
+            </body>
+            </html>
             """,
-            plans_list=plans_list
+            plans_list=plans_list,
+            processes=processes,
+            teams=teams
+        )
         )
 
     @app.route("/performance")
