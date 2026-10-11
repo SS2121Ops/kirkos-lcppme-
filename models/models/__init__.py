@@ -15,6 +15,9 @@ def init_extensions(app):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+
+
+# Import models so SQLAlchemy can register them.
 from models.user import User
 from models.process import WorkProcess
 from models.team import Team
