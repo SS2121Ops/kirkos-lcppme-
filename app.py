@@ -460,7 +460,7 @@ def create_app():
             processes=processes,
             teams=teams
         )
-        )
+        
 
     @app.route("/performance")
     def performance():
