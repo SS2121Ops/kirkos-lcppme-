@@ -91,10 +91,7 @@ class Performance(db.Model):
 
     review_comment = db.Column(db.Text, nullable=True)
 
-    target = db.relationship(
-        "PlanTarget",
-        backref=db.backref("performances", lazy=True)
-    )
+    
 
     entered_user = db.relationship(
         "User",
