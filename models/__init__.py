@@ -19,6 +19,12 @@ def init_extensions(app):
 
 # Import models so SQLAlchemy can register them.
 from models.user import User
+@login_manager.user_loader
+def load_user(user_id):
+    try:
+        return db.session.get(User, int(user_id))
+    except (ValueError, TypeError):
+        return None
 from models.process import WorkProcess
 from models.team import Team
 from models.kpi import KPI
