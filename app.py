@@ -532,8 +532,8 @@ def create_app():
             total_performances=total_performances
         )
 
-  with app.app_context():
-    db.create_all()
+    with app.app_context():
+        db.create_all()
 app = create_app()
 
 if __name__ == "__main__":
