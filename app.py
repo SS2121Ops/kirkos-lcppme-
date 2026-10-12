@@ -95,7 +95,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object("config.Config")
 
-  app.config["SECRET_KEY"] = (
+    app.config["SECRET_KEY"] = (
     os.environ.get("SECRET_KEY")
     or app.config.get("SECRET_KEY")
     or "temporary-development-key-change-this"
