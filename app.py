@@ -95,10 +95,11 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object("config.Config")
 
-    app.config["SECRET_KEY"] = os.environ.get(
-        "SECRET_KEY",
-        app.config.get("SECRET_KEY", "dev-key-change-before-production"),
-    )
+  app.config["SECRET_KEY"] = (
+    os.environ.get("SECRET_KEY")
+    or app.config.get("SECRET_KEY")
+    or "temporary-development-key-change-this"
+)
 
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
