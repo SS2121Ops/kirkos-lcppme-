@@ -532,12 +532,69 @@ def create_app():
             total_performances=total_performances
         )
 
-    # Create tables if they do not exist yet.
-    # This is a temporary initialization step; migrations are preferable later.
-    with app.app_context():
-        db.create_all()
+  with app.app_context():
+    db.create_all()
 
-    return app
+    # Seed the three work processes
+    processes_data = [
+        {
+            "code": "TII",
+            "name": "የታክስ ኢንተለጀንስ እና ምርመራ",
+            "teams": [
+                ("TII-01", "የታክስ ኢንተለጀንስ እና ኦፕሬሽን አፈፃፀም"),
+                ("TII-02", "ኢንቨስትጌሽን ኦዲት"),
+                ("TII-03", "የጥቆማ አቀባበል እና ወሮታ አበል ክፍያ"),
+            ],
+        },
+        {
+            "code": "TES",
+            "name": "የታክስ ከፋዮች ትምህርት፣ ድጋፍና የሕግ ተገዥነት ስጋት ስራ አመራር",
+            "teams": [
+                ("TES-01", "የታክስ ከፋዮች ትምህርትና ድጋፍ ቡድን"),
+                ("TES-02", "የታክስ ከፋዮች የሕግ ተገዥነት ስጋት ስራ አመራር ቡድን"),
+            ],
+        },
+        {
+            "code": "TI",
+            "name": "የታክስ መረጃ",
+            "teams": [
+                ("TI-01", "የደረሰኝና ሽያጭ መመዝገቢያ መሣሪያ አስተዳደር ቡድን"),
+                ("TI-02", "የደረሰኝና ሽያጭ መመዝገቢያ መሣሪያ አጠቃቀም ቁጥጥር ቡድን"),
+                ("TI-03", "የገበያ ጥናትና ሶስተኛ ወገን መረጃ አሰባሰብ"),
+                ("TI-04", "የታክስ ከፋዮች ምዝገባና የግብር ማሻሻያ ቡድን"),
+            ],
+        },
+    ]
+
+    for process_data in processes_data:
+        process = WorkProcess.query.filter_by(
+            code=process_data["code"]
+        ).first()
+
+        if process is None:
+            process = WorkProcess(
+                code=process_data["code"],
+                name=process_data["name"],
+                status="Active",
+            )
+            db.session.add(process)
+            db.session.flush()
+
+        for team_code, team_name in process_data["teams"]:
+            team = Team.query.filter_by(code=team_code).first()
+
+            if team is None:
+                team = Team(
+                    code=team_code,
+                    name=team_name,
+                    process_id=process.id,
+                    status="Active",
+                )
+                db.session.add(team)
+
+    db.session.commit()
+
+return app
 
 
 app = create_app()
