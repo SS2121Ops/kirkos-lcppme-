@@ -266,7 +266,7 @@ def create_app():
                         "የመጨረሻ ቀን ከመጀመሪያ ቀን በፊት መሆን የለበትም።"
                     )
 
-                new_plan = Plan(
+                                new_plan = Plan(
                     fiscal_year=fiscal_year,
                     title=title,
                     objective=objective or None,
@@ -276,15 +276,29 @@ def create_app():
                     end_date=end_date,
                     status="Draft",
                 )
-    db.session.add(new_plan)
-    db.session.commit()
 
-flash(
-    "ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል። ቀጣዩን ዕቅድ መመዝገብ ይችላሉ።",
-    "success",
-)
+                db.session.add(new_plan)
+                db.session.commit()
 
-return redirect(url_for("plans"))
+                flash(
+                    "ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል።",
+                    "success",
+                )
+
+            except ValueError as error:
+                db.session.rollback()
+                flash(str(error), "error")
+
+            except Exception:
+                db.session.rollback()
+                app.logger.exception("Failed to save annual plan")
+                flash(
+                    "ዕቅዱን ማስቀመጥ አልተቻለም። "
+                    "የRender ሎግ ያረጋግጡ።",
+                    "error",
+                )
+
+            return redirect(url_for("plans"))
 
             except ValueError as error:
                 db.session.rollback()
