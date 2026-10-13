@@ -277,7 +277,7 @@ def create_app():
                     status="Draft",
                 )
     db.session.add(new_plan)
-db.session.commit()
+    db.session.commit()
 
 flash(
     "ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል። ቀጣዩን ዕቅድ መመዝገብ ይችላሉ።",
