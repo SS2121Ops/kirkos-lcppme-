@@ -276,9 +276,15 @@ def create_app():
                     end_date=end_date,
                     status="Draft",
                 )
-                db.session.add(new_plan)
-                db.session.commit()
-                flash("ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል።", "success")
+    db.session.add(new_plan)
+db.session.commit()
+
+flash(
+    "ዕቅዱ በተሳካ ሁኔታ ተመዝግቧል። ቀጣዩን ዕቅድ መመዝገብ ይችላሉ።",
+    "success",
+)
+
+return redirect(url_for("plans"))
 
             except ValueError as error:
                 db.session.rollback()
